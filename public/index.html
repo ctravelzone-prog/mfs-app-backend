@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>[App Name] — Backend Sandbox Live Demo</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;padding:20px;background:#f6f6f6;color:#222}
+.card{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+h1{font-size:22px} h2{font-size:17px;margin:0 0 8px}
+input,button{font-size:16px;padding:10px;margin:4px 0;width:100%;box-sizing:border-box;border-radius:8px;border:1px solid #ccc}
+button{background:#0a7d3b;color:#fff;border:none;cursor:pointer}
+button.secondary{background:#eee;color:#222}
+pre{background:#111;color:#0f0;padding:12px;border-radius:8px;overflow:auto;font-size:12px;white-space:pre-wrap}
+.small{color:#666;font-size:13px}
+</style>
+</head>
+<body>
+<h1>[App Name] — MFS Backend Sandbox</h1>
+<p class="small">Demo only, real taka noy. License chara real money chalano jabe na. OTP: <b>123456</b> | Test card: <b>4242 4242 4242 4242, 12/30, 123</b></p>
+<div class="card"><h2>1. Signup / Login</h2>
+<input id="name" placeholder="Naam" value="Test User">
+<input id="mobile" placeholder="Mobile" value="01711111111">
+<input id="pin" placeholder="4-digit PIN" value="1234" maxlength="4">
+<button onclick="signup()">Signup</button>
+<button class="secondary" onclick="login()">Login</button>
+<p>Token: <span id="tokenOut" class="small">—</span></p></div>
+<div class="card"><h2>2. Balance</h2><button onclick="balance()">Balance dekho</button><p>Balance: <b id="bal">—</b></p></div>
+<div class="card"><h2>3. Card diye Add Money (Sandbox)</h2>
+<input id="amount" type="number" placeholder="Amount" value="1000">
+<button onclick="cashIn()">Card Cash-In (৳1000 test)</button>
+<p class="small">Card number ekhane kokhono diba na — gateway token + last4 dey, amra sudhu setai rakhi.</p></div>
+<div class="card"><h2>4. Send Money / Recharge</h2>
+<input id="toMobile" placeholder="Receiver mobile" value="01722222222">
+<input id="sendAmt" type="number" placeholder="Amount" value="200">
+<button onclick="sendMoney()">Send Money</button>
+<button class="secondary" onclick="recharge()">Recharge ৳100</button></div>
+<div class="card"><h2>5. Transactions</h2><button onclick="txs()">History dekho</button></div>
+<pre id="out">Ready. Uporer button diye test koro.</pre>
+<script>
+let token = '';
+function show(x){ document.getElementById('out').textContent = typeof x==='string'?x:JSON.stringify(x,null,2); }
+async function call(path, body, auth){
+  const r = await fetch(path, {method: body?'POST':'GET', headers:{'Content-Type':'application/json', ...(auth?{Authorization:'Bearer '+token}:{})}, body: body?JSON.stringify(body):undefined});
+  const j = await r.json(); show(j); return j;
+}
+async function signup(){ const j = await call('/api/auth/signup',{name:document.getElementById('name').value,mobile:document.getElementById('mobile').value,pin:document.getElementById('pin').value}); if(j.token){token=j.token;document.getElementById('tokenOut').textContent='saved';} }
+async function login(){ const j = await call('/api/auth/login',{mobile:document.getElementById('mobile').value,pin:document.getElementById('pin').value}); if(j.token){token=j.token;document.getElementById('tokenOut').textContent='saved';} }
+async function balance(){ const j = await call('/api/wallet/balance',null,true); if(j.balance!==undefined) document.getElementById('bal').textContent='৳'+j.balance; }
+async function cashIn(){
+  const amt = Number(document.getElementById('amount').value);
+  const init = await call('/api/wallet/cash-in/card/init',{amount:amt},true);
+  if(!init.sessionId) return;
+  await call('/api/wallet/cash-in/card/confirm',{sessionId:init.sessionId,last4:'4242',brand:'Visa'},true);
+  balance();
+}
+async function sendMoney(){ await call('/api/wallet/send-money',{toMobile:document.getElementById('toMobile').value,amount:Number(document.getElementById('sendAmt').value),pin:document.getElementById('pin').value},true); balance(); }
+async function recharge(){ await call('/api/wallet/recharge',{mobile:document.getElementById('mobile').value,operator:'Grameenphone',amount:100},true); balance(); }
+async function txs(){ await call('/api/transactions',null,true); }
+fetch('/health').then(r=>r.json()).then(j=>{ if(j.ok) show('Live OK — '+JSON.stringify(j)); });
+</script>
+</body>
+</html>

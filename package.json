@@ -1,0 +1,1 @@
+{"dependencies":{"cors":"^2.8.5","express":"^4.19.2"},"description":"MFS App backend sandbox - demo only, no real money. Card Add Money via gateway sandbox adapter (tokenized, no card storage).","main":"src/server.js","name":"mfs-app-backend-sandbox","scripts":{"start":"node src/server.js","test":"bash test.sh"},"version":"0.1.0"}
